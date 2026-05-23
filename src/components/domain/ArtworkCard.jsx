@@ -6,7 +6,7 @@ export default function ArtworkCard({ artwork }) {
   const { id, title, medium, price, images, editionType, artist } = artwork;
 
   return (
-    <motion.div 
+    <motion.div
       className="card artwork-card"
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
@@ -20,7 +20,7 @@ export default function ArtworkCard({ artwork }) {
         </div>
         <div className="artwork-card-content">
           <div className="artwork-meta">
-            <h3 className="artwork-title font-display">{title}</h3>
+            <h5 className="artwork-title font-display">{title}</h5>
             {artist && <p className="artwork-artist">{artist.name}</p>}
           </div>
           <div className="artwork-details">

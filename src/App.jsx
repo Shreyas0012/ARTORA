@@ -1,4 +1,7 @@
-import { Routes, Route } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Routes, Route, useLocation } from 'react-router-dom';
+import Lenis from 'lenis';
+import FloatingActions from './components/layout/FloatingActions';
 import AppLayout from './components/layout/AppLayout';
 import Landing from './pages/Landing';
 import Explore from './pages/Explore';
@@ -8,28 +11,108 @@ import ArtistProfile from './pages/ArtistProfile';
 import ArtistDashboard from './pages/ArtistDashboard';
 import Onboard from './pages/Onboard';
 import CreateListing from './pages/CreateListing';
+import LoadingScreen from './components/layout/LoadingScreen';
+
+import AdminPanel from './pages/AdminPanel';
+
+import Login from './pages/Login';
+import Register from './pages/Register';
+import ProtectedRoute from './components/layout/ProtectedRoute';
 
 // Placeholder components for unbuilt pages
 const Collections = () => <div className="container" style={{padding: '4rem 0'}}>Curated Collections Page</div>;
 const CollectorDashboard = () => <div className="container" style={{padding: '4rem 0'}}>Collector Dashboard</div>;
-const AdminPanel = () => <div className="container" style={{padding: '4rem 0'}}>Admin Panel</div>;
+
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    if (window.lenis) {
+      window.lenis.scrollTo(0, { immediate: true });
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname]);
+
+  return null;
+}
 
 function App() {
+  const [isLoading, setIsLoading] = useState(true);
+  const location = useLocation();
+
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 2000); // Show loading screen for 2s on load
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 0.6,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
+      smoothWheel: true,
+      wheelMultiplier: 1.5,
+      smoothTouch: false,
+      touchMultiplier: 2,
+    });
+    
+    window.lenis = lenis;
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+
+    return () => {
+      lenis.destroy();
+    };
+  }, []);
+
   return (
-    <Routes>
+    <>
+      <LoadingScreen isLoading={isLoading} />
+      <ScrollToTop />
+      <FloatingActions />
+      <Routes>
       <Route path="/" element={<AppLayout />}>
         <Route index element={<Landing />} />
         <Route path="explore" element={<Explore />} />
         <Route path="artwork/:id" element={<ArtworkDetail />} />
         <Route path="artist/:id" element={<ArtistProfile />} />
         <Route path="collections" element={<Collections />} />
-        <Route path="dashboard/artist" element={<ArtistDashboard />} />
-        <Route path="dashboard/collector" element={<CollectorDashboard />} />
-        <Route path="admin" element={<AdminPanel />} />
+        
+        <Route path="login" element={<Login />} />
+        <Route path="register" element={<Register />} />
+
+        {/* Protected Routes */}
+        <Route path="dashboard/artist" element={
+          <ProtectedRoute allowedRoles={['ARTIST', 'ADMIN']}>
+            <ArtistDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="dashboard/collector" element={
+          <ProtectedRoute allowedRoles={['BUYER', 'ADMIN']}>
+            <CollectorDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="admin" element={
+          <ProtectedRoute allowedRoles={['ADMIN']}>
+            <AdminPanel />
+          </ProtectedRoute>
+        } />
+        
         <Route path="onboard" element={<Onboard />} />
         <Route path="create-listing" element={<CreateListing />} />
       </Route>
     </Routes>
+    </>
   );
 }
 

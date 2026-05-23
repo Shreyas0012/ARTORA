@@ -13,9 +13,8 @@
 .artwork-image-container {
   position: relative;
   aspect-ratio: 3 / 4;
-  max-height: 280px;
   overflow: hidden;
-  background-color: var(--bg-tertiary);
+  background-color: transparent;
 }
 
 .artwork-image {
@@ -38,7 +37,7 @@
 }
 
 .artwork-card-content {
-  padding: var(--space-3);
+  padding: var(--space-6) 0;
   display: flex;
   flex-direction: column;
   flex-grow: 1;
@@ -50,12 +49,20 @@
 }
 
 .artwork-title {
-  font-size: 0.9375rem;
-  margin-bottom: var(--space-1);
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: var(--space-2);
+  background: linear-gradient(135deg, #ffffff 0%, #7e8c9a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block;
 }
 
 .artwork-artist {
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   color: var(--text-secondary);
 }
 
@@ -67,10 +74,13 @@
 }
 
 .artwork-medium {
-  font-size: 0.75rem;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
 }
 
 .artwork-price {
-  font-weight: 600;
+  font-weight: 300;
+  font-size: 0.85rem;
   color: var(--text-primary);
 }

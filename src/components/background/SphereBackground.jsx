@@ -2,98 +2,69 @@ import { useRef, useMemo } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-function RibbonSphere() {
-  const groupRef = useRef();
-
-  // Generate ribbon bands as curved tube geometries wrapped around a sphere
-  const ribbons = useMemo(() => {
-    const ribbonData = [];
-    const count = 22;
-
-    for (let i = 0; i < count; i++) {
-      const phi = (i / count) * Math.PI * 2;
-      const tilt = (i / count) * Math.PI;
-      const points = [];
-      const segments = 180;
-
-      for (let j = 0; j <= segments; j++) {
-        const theta = (j / segments) * Math.PI * 2;
-        const radius = 2.4;
-
-        // Ribbons wrap around sphere surface at varying orientations
-        const x = radius * Math.sin(tilt) * Math.cos(theta) + radius * Math.cos(tilt) * Math.sin(theta * 0.5) * 0.3;
-        const y = radius * Math.cos(tilt) * Math.cos(theta) - radius * Math.sin(tilt) * Math.sin(theta * 0.5) * 0.3;
-        const z = radius * Math.sin(theta) * Math.cos(tilt * 0.7);
-
-        points.push(new THREE.Vector3(x, y, z));
-      }
-
-      // Cyan to teal gradient via index
-      const t = i / count;
-      const color = new THREE.Color().setHSL(
-        0.52 + t * 0.06,  // hue: 187–209 deg (cyan → teal)
-        0.85,
-        0.35 + t * 0.2    // slightly lighter as we go
-      );
-
-      ribbonData.push({ points, color, opacity: 0.3 + (1 - Math.abs(t - 0.5) * 2) * 0.55 });
-    }
-    return ribbonData;
-  }, []);
+function FrozenMonolith() {
+  const meshRef = useRef();
 
   useFrame(({ clock }) => {
-    if (groupRef.current) {
+    if (meshRef.current) {
       const t = clock.getElapsedTime();
-      // Very slow, calm rotation — no dramatic movement
-      groupRef.current.rotation.y = t * 0.04;
-      groupRef.current.rotation.x = Math.sin(t * 0.02) * 0.06;
+      meshRef.current.rotation.y = t * 0.05;
+      meshRef.current.rotation.x = Math.sin(t * 0.1) * 0.05;
+      meshRef.current.position.y = Math.sin(t * 0.5) * 0.2;
     }
   });
 
   return (
-    <group ref={groupRef} position={[0, 0, 0]}>
-      {ribbons.map((ribbon, i) => {
-        const curve = new THREE.CatmullRomCurve3(ribbon.points, true);
-        const tubeGeo = new THREE.TubeGeometry(curve, 200, 0.012, 4, true);
-        return (
-          <mesh key={i} geometry={tubeGeo}>
-            <meshBasicMaterial
-              color={ribbon.color}
-              transparent
-              opacity={ribbon.opacity}
-              depthWrite={false}
-            />
-          </mesh>
-        );
-      })}
-
-      {/* Core soft inner glow sphere */}
+    <mesh ref={meshRef} position={[0, 0, 0]}>
+      <octahedronGeometry args={[2.5, 0]} />
+      <meshStandardMaterial
+        color="#e2e8f0"
+        roughness={0.1}
+        metalness={0.8}
+        transparent
+        opacity={0.8}
+        wireframe={true}
+      />
       <mesh>
-        <sphereGeometry args={[2.38, 64, 64]} />
-        <meshBasicMaterial
-          color={new THREE.Color(0x0a2a2e)}
-          transparent
-          opacity={0.25}
-          depthWrite={false}
-        />
+        <octahedronGeometry args={[2.4, 1]} />
+        <meshBasicMaterial color="#020813" opacity={0.9} transparent />
       </mesh>
-    </group>
+    </mesh>
   );
 }
 
-function GlowHalo() {
-  // Outer ambient glow via large transparent sphere
+function AtmosphericParticles() {
+  const count = 1000;
+  const positions = useMemo(() => {
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 20;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 20;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 15 - 5;
+    }
+    return pos;
+  }, [count]);
+
+  const pointsRef = useRef();
+
+  useFrame(({ clock }) => {
+    if (pointsRef.current) {
+      pointsRef.current.rotation.y = clock.getElapsedTime() * 0.02;
+    }
+  });
+
   return (
-    <mesh position={[1, 0, 0]}>
-      <sphereGeometry args={[3.8, 32, 32]} />
-      <meshBasicMaterial
-        color={new THREE.Color(0x06b6d4)}
-        transparent
-        opacity={0.03}
-        side={THREE.BackSide}
-        depthWrite={false}
-      />
-    </mesh>
+    <points ref={pointsRef}>
+      <bufferGeometry>
+        <bufferAttribute
+          attach="attributes-position"
+          count={count}
+          array={positions}
+          itemSize={3}
+        />
+      </bufferGeometry>
+      <pointsMaterial size={0.05} color="#94a3b8" transparent opacity={0.4} sizeAttenuation />
+    </points>
   );
 }
 
@@ -105,25 +76,35 @@ export default function SphereBackground() {
         inset: 0,
         zIndex: 0,
         pointerEvents: 'none',
-        background: 'radial-gradient(ellipse at 60% 50%, #030d0f 0%, #000000 65%)',
+        background: '#020305',
       }}
     >
       <Canvas
-        camera={{ position: [0, 0, 7], fov: 50 }}
-        gl={{ antialias: true, alpha: true }}
+        camera={{ position: [0, 0, 8], fov: 45 }}
+        gl={{ antialias: true, alpha: false }}
         style={{ width: '100%', height: '100%' }}
       >
-        <GlowHalo />
-        <RibbonSphere />
+        <color attach="background" args={['#020305']} />
+        <fogExp2 attach="fog" args={['#020305', 0.08]} />
+        
+        <ambientLight intensity={0.2} color="#64748b" />
+        <directionalLight position={[5, 5, 5]} intensity={0.5} color="#f8fafc" />
+        <pointLight position={[-5, -5, -5]} intensity={0.5} color="#020813" />
+
+        <FrozenMonolith />
+        <AtmosphericParticles />
       </Canvas>
 
-      {/* Left-side fade: keeps text overlay area clean and dark */}
+      {/* Heavy noise overlay for filmic feel */}
       <div
+        className="noise-overlay"
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'linear-gradient(to right, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.45) 30%, transparent 60%)',
+          opacity: 0.04,
+          background: 'url("data:image/svg+xml,%3Csvg viewBox=%220 0 200 200%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter id=%22noiseFilter%22%3E%3CfeTurbulence type=%22fractalNoise%22 baseFrequency=%220.65%22 numOctaves=%223%22 stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect width=%22100%25%22 height=%22100%25%22 filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E")',
           pointerEvents: 'none',
+          mixBlendMode: 'overlay',
         }}
       />
     </div>

@@ -1,12 +1,18 @@
 .navbar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  width: 100%;
   z-index: var(--z-overlay);
-  background-color: rgba(5, 5, 10, 0.8);
-  /* Deep navy glass */
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--border-color);
-  padding: var(--space-4) 0;
+  background-color: transparent;
+  padding: var(--space-4) var(--space-6);
+  opacity: 0.2;
+  transition: opacity 1.5s ease;
+  mix-blend-mode: difference;
+}
+
+.navbar:hover {
+  opacity: 1;
 }
 
 .navbar-container {
@@ -23,11 +29,10 @@
 }
 
 .navbar-logo {
-  font-size: 1.25rem;
-  letter-spacing: 0.1em;
-  font-weight: 600;
+  font-size: 1.5rem;
+  letter-spacing: 0.02em;
+  font-weight: 500;
   color: var(--text-primary);
-  text-transform: uppercase;
 }
 
 .navbar-links {
@@ -36,18 +41,18 @@
 }
 
 .navbar-links a {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--text-secondary);
-  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 400;
   letter-spacing: 0.1em;
-  transition: color var(--transition-fast), text-shadow var(--transition-fast);
+  text-transform: uppercase;
+  transition: color var(--transition-slow);
 }
 
-.navbar-links a:hover {
-  color: var(--accent-light);
-  text-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
-}
+/* .navbar-links a:hover {
+  color: var(--text-primary);
+} */
 
 .menu-btn {
   display: block;
@@ -67,9 +72,7 @@
 }
 
 .icon-btn:hover {
-  color: var(--accent-light);
-  background-color: rgba(6, 182, 212, 0.1);
-  border-color: rgba(6, 182, 212, 0.2);
+  color: var(--text-primary);
 }
 
 @media (min-width: 768px) {
@@ -82,8 +85,9 @@
   }
 }
 
-/* Connect button: black text on cyan background */
+/* Connect button override */
 .navbar .btn-primary {
-  color: #000000;
-  font-weight: 600;
+  color: #000;
+  background-color: var(--text-primary);
+  border-color: var(--text-primary);
 }
