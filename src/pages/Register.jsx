@@ -89,7 +89,6 @@ export default function Register() {
             >
               <option value="BUYER">Collector / Buyer</option>
               <option value="ARTIST">Artist</option>
-              <option value="ADMIN">Administrator</option>
             </select>
           </div>
           <button type="submit" className="btn btn-primary w-full" disabled={loading} style={{ justifyContent: 'center', marginTop: '0.5rem' }}>

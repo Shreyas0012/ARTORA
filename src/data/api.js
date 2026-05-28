@@ -1,3 +1,5 @@
+import { MOCK_DATA } from './mock';
+
 // Central API service — all backend calls go through here
 const hostname = window.location.hostname;
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || `http://${hostname}:8080/api`;
@@ -24,9 +26,24 @@ function getHeaders() {
 
 // ─── Artworks ───────────────────────────────────────────
 export const artworksApi = {
-  getAll: () => fetch(`${BASE_URL}/artworks`).then(handleResponse),
-  getById: (id) => fetch(`${BASE_URL}/artworks/${id}`).then(handleResponse),
-  getByCategory: (category) => fetch(`${BASE_URL}/artworks/category/${category}`).then(handleResponse),
+  getAll: () => fetch(`${BASE_URL}/artworks`)
+    .then(handleResponse)
+    .catch(err => {
+      console.warn("API error (getAll), falling back to mock data:", err);
+      return MOCK_DATA.artworks;
+    }),
+  getById: (id) => fetch(`${BASE_URL}/artworks/${id}`)
+    .then(handleResponse)
+    .catch(err => {
+      console.warn(`API error (getById ${id}), falling back to mock data:`, err);
+      return MOCK_DATA.artworks.find(a => String(a.id) === String(id));
+    }),
+  getByCategory: (category) => fetch(`${BASE_URL}/artworks/category/${category}`)
+    .then(handleResponse)
+    .catch(err => {
+      console.warn(`API error (getByCategory ${category}), falling back to mock data:`, err);
+      return MOCK_DATA.artworks.filter(a => a.category === category || a.editionType === category);
+    }),
   create: (data) => fetch(`${BASE_URL}/artworks`, {
     method: 'POST', headers: getHeaders(), body: JSON.stringify(data)
   }).then(handleResponse),
@@ -40,8 +57,18 @@ export const artworksApi = {
 
 // ─── Artists ────────────────────────────────────────────
 export const artistsApi = {
-  getAll: () => fetch(`${BASE_URL}/artists`).then(handleResponse),
-  getById: (id) => fetch(`${BASE_URL}/artists/${id}`).then(handleResponse),
+  getAll: () => fetch(`${BASE_URL}/artists`)
+    .then(handleResponse)
+    .catch(err => {
+      console.warn("API error (getAll artists), falling back to mock data:", err);
+      return MOCK_DATA.artists;
+    }),
+  getById: (id) => fetch(`${BASE_URL}/artists/${id}`)
+    .then(handleResponse)
+    .catch(err => {
+      console.warn(`API error (getById artist ${id}), falling back to mock data:`, err);
+      return MOCK_DATA.artists.find(a => String(a.id) === String(id));
+    }),
   create: (data) => fetch(`${BASE_URL}/artists`, {
     method: 'POST', headers: getHeaders(), body: JSON.stringify(data)
   }).then(handleResponse),
@@ -80,8 +107,18 @@ export const uploadApi = {
 };
 // ─── Collections ────────────────────────────────────────
 export const collectionsApi = {
-  getAll: () => fetch(`${BASE_URL}/collections`).then(handleResponse),
-  getById: (id) => fetch(`${BASE_URL}/collections/${id}`).then(handleResponse),
+  getAll: () => fetch(`${BASE_URL}/collections`)
+    .then(handleResponse)
+    .catch(err => {
+      console.warn("API error (getAll collections), falling back to mock data:", err);
+      return MOCK_DATA.collections;
+    }),
+  getById: (id) => fetch(`${BASE_URL}/collections/${id}`)
+    .then(handleResponse)
+    .catch(err => {
+      console.warn(`API error (getById collection ${id}), falling back to mock data:`, err);
+      return MOCK_DATA.collections.find(c => String(c.id) === String(id));
+    }),
   create: (collection) => fetch(`${BASE_URL}/collections`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -92,32 +129,37 @@ export const collectionsApi = {
 
 // ─── Helper: normalize backend artwork → UI format ──────
 export function normalizeArtwork(artwork) {
+  if (!artwork) return null;
+  const artistIdStr = artwork.artistId || (artwork.artist ? String(artwork.artist.id) : null);
+  const foundArtist = artwork.artist || (artistIdStr ? MOCK_DATA.artists.find(a => String(a.id) === String(artistIdStr)) : null);
+
   return {
     id: String(artwork.id),
     title: artwork.title || 'Untitled',
-    artistId: artwork.artist ? String(artwork.artist.id) : null,
-    artist: artwork.artist ? normalizeArtist(artwork.artist) : null,
+    artistId: artistIdStr,
+    artist: foundArtist ? normalizeArtist(foundArtist) : null,
     medium: artwork.medium || '',
-    editionType: artwork.category || 'Original',
-    price: artwork.price ? `${artwork.price} USD` : 'Price on Request',
-    status: artwork.isAvailable ? 'active' : 'sold',
-    orientation: 'portrait', // default — add orientation field to DB later
-    images: artwork.imageUrl ? [artwork.imageUrl] : ['https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&q=80&w=800'],
-    dimensions: '',
+    editionType: artwork.category || artwork.editionType || 'Original',
+    price: artwork.price ? (artwork.price.includes('USD') || artwork.price.includes('ETH') ? artwork.price : `${artwork.price} USD`) : 'Price on Request',
+    status: artwork.isAvailable !== undefined ? (artwork.isAvailable ? 'active' : 'sold') : (artwork.status || 'active'),
+    orientation: artwork.orientation || 'portrait',
+    images: artwork.imageUrl ? [artwork.imageUrl] : (artwork.images && artwork.images.length > 0 ? artwork.images : ['https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5?auto=format&fit=crop&q=80&w=800']),
+    dimensions: artwork.dimensions || '',
     year: artwork.year ? String(artwork.year) : '',
     description: artwork.description || '',
-    provenance: [],
+    provenance: artwork.provenance || [],
   };
 }
 
 // ─── Helper: normalize backend artist → UI format ───────
 export function normalizeArtist(artist) {
+  if (!artist) return null;
   return {
     id: String(artist.id),
     name: artist.name || 'Unknown Artist',
-    avatar: artist.profileImage || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
+    avatar: artist.profileImage || artist.avatar || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
     bio: artist.bio || '',
-    isVerified: true,
+    isVerified: artist.isVerified !== undefined ? artist.isVerified : true,
     nationality: artist.nationality || '',
     birthYear: artist.birthYear || null,
   };
